@@ -17,7 +17,7 @@ function Abonnes() {
   // Récupérer les abonnés depuis l'API
   const fetchAbonnes = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/abonnés`);
       setAbonnes(response.data); // Mettre à jour l'état avec la liste des abonnés
     } catch (error) {
       console.error("Erreur lors de la récupération des abonnés :", error);
@@ -27,7 +27,7 @@ function Abonnes() {
   // Supprimer un abonné
   const deleteAbonne = async (id) => {
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/${id}`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/abonnés/${id}`);
       fetchAbonnes(); // Recharger la liste des abonnés après la suppression
     } catch (error) {
       console.error("Erreur lors de la suppression de l'abonné :", error);
@@ -37,7 +37,7 @@ function Abonnes() {
   // Modifier un abonné
   const handleEdit = (abonne) => {
     setCurrentAbonne(abonne); // Sauvegarder l'abonné actuel pour modification
-    setNewAbonne({ nom: abonne.nom, prenom: abonne.prenom, adresse: abonne.adresse }); // Remplir le formulaire avec les valeurs actuelles
+    setNewAbonne({ nom: abonne.nom, prenom: abonne.prenom, adresse: abonne.adresse}); // Remplir le formulaire avec les valeurs actuelles
     setShowModal(true); // Afficher le modal
   };
 
@@ -47,8 +47,8 @@ function Abonnes() {
 
     // Vérifier si l'abonné est en mode édition ou ajout
     const apiUrl = currentAbonne
-      ? `${process.env.REACT_APP_API_URL}/${currentAbonne._id}` // Si modification, utiliser l'ID
-      : `${process.env.REACT_APP_API_URL}`; // Sinon, ajout
+      ? `${process.env.REACT_APP_API_URL}/abonnés/${currentAbonne._id}` // Si modification, utiliser l'ID
+      : `${process.env.REACT_APP_API_URL}/abonnés`; // Sinon, ajout
 
     try {
       if (currentAbonne) {
@@ -61,7 +61,7 @@ function Abonnes() {
 
       fetchAbonnes(); // Recharger la liste des abonnés
       setShowModal(false); // Fermer le modal
-      setNewAbonne({ nom: "", prenom: "", adresse: "" }); // Réinitialiser le formulaire
+      setNewAbonne({ nom: "", prenom: "", adresse: ""}); // Réinitialiser le formulaire
       setCurrentAbonne(null); // Réinitialiser l'abonné actuel
     } catch (error) {
       console.error("Erreur lors de l'ajout ou modification de l'abonné :", error);
@@ -89,7 +89,8 @@ function Abonnes() {
               <div style={styles.abonneInfo}>
                 <strong>Nom :</strong> {abonne.nom} <br />
                 <strong>Prénom :</strong> {abonne.prenom} <br />
-                <strong>Adresse :</strong> {abonne.adresse}
+                <strong>Adresse :</strong> {abonne.adresse} <br />
+              
               </div>
               <div style={styles.actions}>
                 <button
@@ -155,6 +156,7 @@ function Abonnes() {
               />
             </Form.Group>
 
+           
             <Button variant="primary" type="submit" style={styles.submitButton}>
               {currentAbonne ? "Mettre à jour" : "Ajouter"}
             </Button>
@@ -231,11 +233,8 @@ const styles = {
     color: '#fff',
     border: 'none',
     borderRadius: '6px',
-    padding: '10px 15px',
+    padding: '8px 16px',
     cursor: 'pointer',
-    fontWeight: 'bold',
-    display: 'flex',
-    alignItems: 'center',
     transition: 'background-color 0.3s ease',
   },
   deleteButton: {
@@ -243,23 +242,26 @@ const styles = {
     color: '#fff',
     border: 'none',
     borderRadius: '6px',
-    padding: '10px 15px',
+    padding: '8px 16px',
     cursor: 'pointer',
-    fontWeight: 'bold',
-    display: 'flex',
-    alignItems: 'center',
     transition: 'background-color 0.3s ease',
   },
   actionIcon: {
-    marginRight: '8px',
-  },
-  noAbonnes: {
-    fontSize: '18px',
-    color: '#7f8c8d',
-    marginTop: '20px',
+    marginRight: '5px',
   },
   submitButton: {
-    marginTop: '20px',
+    backgroundColor: '#27ae60',
+    color: '#fff',
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
+  },
+  noAbonnes: {
+    color: '#34495e',
+    fontSize: '18px',
   },
 };
 

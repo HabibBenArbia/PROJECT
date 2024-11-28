@@ -19,7 +19,7 @@ const App = () => {
           <Route path="/abonnes" element={<Abonnes />} />
           <Route path="/documents" element={<Documents />} />
           <Route path="/emprunts" element={<Emprunts />} />
-          <Route path="/" element={<Home />} /> {/* Remplacé le h1 par un composant */}
+          <Route path="/" element={<Home />} /> {  }
         </Routes>
       </div>
     </Router>

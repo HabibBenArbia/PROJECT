@@ -23,7 +23,7 @@ services:
     depends_on:
       - backend  # Le frontend dépend du backend
     environment:
-      - REACT_APP_API_URL=backend:5000  # L'URL de l'API backend que React utilisera
+      - REACT_APP_API_URL=http://localhost:5000  # L'URL de l'API backend que React utilisera
     networks:
       - app_network
 
