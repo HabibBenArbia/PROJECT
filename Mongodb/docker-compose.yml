@@ -1,0 +1,46 @@
+version: '3.3'
+
+services:
+  backend:
+    build:
+      context: ./backend  # Le chemin vers le répertoire backend contenant le Dockerfile
+    container_name: backend
+    ports:
+      - "5000:5000"  # Le port 5000 du conteneur est mappé au port 5000 sur votre machine locale
+    environment:
+      - FLASK_ENV=development
+    depends_on:
+      - mongo  # Le backend dépend de MongoDB
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend  # Le chemin vers le répertoire frontend contenant le Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"  # Le port 3000 du conteneur est mappé au port 3000 sur votre machine locale
+    depends_on:
+      - backend  # Le frontend dépend du backend
+    environment:
+      - REACT_APP_API_URL=backend:5000  # L'URL de l'API backend que React utilisera
+    networks:
+      - app_network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"  # Le port 27017 du conteneur est mappé au port 27017 sur votre machine locale
+    volumes:
+      - mongo_data:/data/db  # Volume persistant pour MongoDB
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge  # Utilisation du réseau par défaut en mode bridge
+
+volumes:
+  mongo_data:
+    driver: local  # Volume local persistant pour MongoDB
