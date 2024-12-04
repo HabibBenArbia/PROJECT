@@ -3,13 +3,14 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
 
-
+# Initialisation de l'application Flask
 app = Flask(__name__)
 
-
+# CORS configuré pour accepter les requêtes de n'importe quelle origine
 CORS(app)
 
-client = MongoClient("mongodb://mongo:27017/")  
+# Connexion à MongoDB (vérifiez que le service "mongo" correspond au nom dans Docker)
+client = MongoClient("mongodb://mongo:27017/")  # Assurez-vous que 'mongo' est bien le nom du service Docker
 db = client["mediathequeprojet"]
 
 # Définition des collections
@@ -25,7 +26,7 @@ def serialize_id(data):
     return data
 
 # ============================
-#  ROUTE POUR TESTE DE SERVER KEN MAWJOUD WALA 
+# Route de base pour tester le serveur
 # ============================
 @app.route('/', methods=['GET'])
 def index():
@@ -127,24 +128,29 @@ def document_operations(id):
 @app.route('/emprunts', methods=['GET', 'POST'])
 def emprunts():
     if request.method == 'GET':
-        emprunts = list(emprunts_collection.find({}, {"abonne_id": 1, "document_id": 1, "date_emprunt": 1}))
+        # Modifié pour récupérer les nouveaux champs
+        emprunts = list(emprunts_collection.find({}, {"abonnee": 1, "document": 1, "date_emprunt": 1}))
         emprunts = [serialize_id(emprunt) for emprunt in emprunts]
         return jsonify(emprunts), 200
 
     elif request.method == 'POST':
         data = request.json
-        required_fields = ["abonne_id", "document_id", "date_emprunt"]
+        required_fields = ["abonnee", "document", "date_emprunt"]  # Champs renommés
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
+
+        # Insertion avec les nouveaux champs
         emprunts_collection.insert_one(data)
         return jsonify({"message": "Emprunt ajouté avec succès!"}), 201
+
 
 @app.route('/emprunts/<id>', methods=['GET', 'PUT', 'DELETE'])
 def emprunt_operations(id):
     try:
+        # Vérification et conversion de l'ID MongoDB
         obj_id = ObjectId(id)
-    except:
+    except Exception as e:
         return jsonify({"error": "Invalid ID format"}), 400
 
     if request.method == 'GET':
@@ -155,7 +161,23 @@ def emprunt_operations(id):
 
     elif request.method == 'PUT':
         data = request.json
-        result = emprunts_collection.update_one({"_id": obj_id}, {"$set": data})
+        if not data:
+            return jsonify({"error": "No data provided for update"}), 400
+
+        # Assurez-vous de mettre à jour uniquement les champs nécessaires
+        # Par exemple, nous pouvons mettre à jour abonnee, document, date_emprunt, etc.
+        update_data = {}
+        if 'abonnee' in data:  # Mise à jour du champ 'abonne_id' vers 'abonnee'
+            update_data['abonnee'] = data['abonnee']
+        if 'document' in data:  # Mise à jour du champ 'document_id' vers 'document'
+            update_data['document'] = data['document']
+        if 'date_emprunt' in data:
+            update_data['date_emprunt'] = data['date_emprunt']
+
+        if not update_data:
+            return jsonify({"error": "No valid fields to update"}), 400
+
+        result = emprunts_collection.update_one({"_id": obj_id}, {"$set": update_data})
         if result.matched_count == 0:
             return jsonify({"error": "Emprunt introuvable"}), 404
         return jsonify({"message": "Emprunt mis à jour avec succès!"}), 200

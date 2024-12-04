@@ -1,96 +1,121 @@
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa"; // Icons for actions
 import axios from "axios";
-import { Modal, Button, Form } from "react-bootstrap"; // Importer les composants de Bootstrap
+import { Modal, Button, Form } from "react-bootstrap"; // Import Bootstrap components
 
 function Abonnes() {
-  const [abonnes, setAbonnes] = useState([]); // État pour stocker la liste des abonnés
-  const [showModal, setShowModal] = useState(false); // État pour gérer l'affichage du modal
-  const [newAbonne, setNewAbonne] = useState({ nom: "", prenom: "", adresse: "" }); // Données du formulaire d'ajout
-  const [currentAbonne, setCurrentAbonne] = useState(null); // Pour l'édition d'un abonné
+  const [abonnes, setAbonnes] = useState([]); // State to store the list of subscribers
+  const [showModal, setShowModal] = useState(false); // State to manage modal visibility
+  const [newAbonne, setNewAbonne] = useState({ nom: "", prenom: "", adresse: "" }); // Form data for adding a subscriber
+  const [currentAbonne, setCurrentAbonne] = useState(null); // For editing a subscriber
+  const [searchQuery, setSearchQuery] = useState(""); // State for the search query
 
-  // Fonction pour récupérer la liste des abonnés
+  // Fetch the list of subscribers when the component is mounted
   useEffect(() => {
     fetchAbonnes();
   }, []);
 
-  // Récupérer les abonnés depuis l'API
+  // Fetch subscribers from the API
   const fetchAbonnes = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/abonnés`);
-      setAbonnes(response.data); // Mettre à jour l'état avec la liste des abonnés
+      setAbonnes(response.data); // Update state with the list of subscribers
     } catch (error) {
-      console.error("Erreur lors de la récupération des abonnés :", error);
+      console.error("Error fetching subscribers:", error);
     }
   };
 
-  // Supprimer un abonné
+  // Delete a subscriber
   const deleteAbonne = async (id) => {
-    try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/abonnés/${id}`);
-      fetchAbonnes(); // Recharger la liste des abonnés après la suppression
-    } catch (error) {
-      console.error("Erreur lors de la suppression de l'abonné :", error);
-    }
+
+    const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet document ?");
+    if (confirmed) {
+      try {
+        await axios.delete(`${process.env.REACT_APP_API_URL}/abonnés/${id}`);
+        fetchAbonnes(); // Recharger la liste après suppression
+      } catch (error) {
+        console.error("Erreur lors de la suppression du document :", error);
+      }
+     
+    };
   };
 
-  // Modifier un abonné
+  // Handle editing a subscriber
   const handleEdit = (abonne) => {
-    setCurrentAbonne(abonne); // Sauvegarder l'abonné actuel pour modification
-    setNewAbonne({ nom: abonne.nom, prenom: abonne.prenom, adresse: abonne.adresse}); // Remplir le formulaire avec les valeurs actuelles
-    setShowModal(true); // Afficher le modal
+    setCurrentAbonne(abonne); // Save the current subscriber for editing
+    setNewAbonne({ nom: abonne.nom, prenom: abonne.prenom, adresse: abonne.adresse }); // Fill the form with current values
+    setShowModal(true); // Show the modal
   };
 
-  // Ajouter ou modifier un abonné
+  // Add or update a subscriber
   const handleAddAbonne = async (event) => {
     event.preventDefault();
 
-    // Vérifier si l'abonné est en mode édition ou ajout
     const apiUrl = currentAbonne
-      ? `${process.env.REACT_APP_API_URL}/abonnés/${currentAbonne._id}` // Si modification, utiliser l'ID
-      : `${process.env.REACT_APP_API_URL}/abonnés`; // Sinon, ajout
+      ? `${process.env.REACT_APP_API_URL}/abonnés/${currentAbonne._id}` // Update if subscriber exists
+      : `${process.env.REACT_APP_API_URL}/abonnés`; // Add new if no subscriber is selected
 
     try {
       if (currentAbonne) {
-        // Mise à jour de l'abonné
+        // Update existing subscriber
         await axios.put(apiUrl, newAbonne);
       } else {
-        // Ajout de l'abonné
+        // Add new subscriber
         await axios.post(apiUrl, newAbonne);
       }
 
-      fetchAbonnes(); // Recharger la liste des abonnés
-      setShowModal(false); // Fermer le modal
-      setNewAbonne({ nom: "", prenom: "", adresse: ""}); // Réinitialiser le formulaire
-      setCurrentAbonne(null); // Réinitialiser l'abonné actuel
+      fetchAbonnes(); // Reload the list of subscribers
+      setShowModal(false); // Close the modal
+      setNewAbonne({ nom: "", prenom: "", adresse: "" }); // Reset the form
+      setCurrentAbonne(null); // Reset current subscriber
     } catch (error) {
-      console.error("Erreur lors de l'ajout ou modification de l'abonné :", error);
+      console.error("Error adding or updating subscriber:", error);
     }
   };
 
-  // Gérer les changements dans les champs du formulaire
+  // Handle changes in form fields
   const handleChange = (event) => {
     const { name, value } = event.target;
     setNewAbonne({ ...newAbonne, [name]: value });
   };
 
+  // Handle search query change
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
+  // Filtered abonnés based on search query
+  const filteredAbonnes = abonnes.filter((abonne) =>
+    abonne.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    abonne.prenom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    abonne.adresse.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div style={styles.container}>
       <h2 style={styles.heading}>Liste des Abonnés</h2>
+
+      {/* Search Bar */}
+      <input
+        type="text"
+        placeholder="Rechercher par nom, prénom ou adresse"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        style={styles.searchInput}
+      />
 
       <button style={styles.addButton} onClick={() => setShowModal(true)}>
         <FaPlus style={styles.icon} /> {currentAbonne ? "Modifier l'Abonné" : "Ajouter un abonné"}
       </button>
 
-      {abonnes.length > 0 ? (
+      {filteredAbonnes.length > 0 ? (
         <ul style={styles.list}>
-          {abonnes.map((abonne) => (
+          {filteredAbonnes.map((abonne) => (
             <li key={abonne._id} style={styles.listItem}>
               <div style={styles.abonneInfo}>
                 <strong>Nom :</strong> {abonne.nom} <br />
                 <strong>Prénom :</strong> {abonne.prenom} <br />
                 <strong>Adresse :</strong> {abonne.adresse} <br />
-              
               </div>
               <div style={styles.actions}>
                 <button
@@ -113,7 +138,7 @@ function Abonnes() {
         <p style={styles.noAbonnes}>Aucun abonné trouvé.</p>
       )}
 
-      {/* Modal pour ajouter ou modifier un abonné */}
+      {/* Modal for adding or editing a subscriber */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>{currentAbonne ? "Modifier un Abonné" : "Ajouter un Abonné"}</Modal.Title>
@@ -156,7 +181,6 @@ function Abonnes() {
               />
             </Form.Group>
 
-           
             <Button variant="primary" type="submit" style={styles.submitButton}>
               {currentAbonne ? "Mettre à jour" : "Ajouter"}
             </Button>
@@ -183,6 +207,14 @@ const styles = {
     fontWeight: 'bold',
     marginBottom: '30px',
     color: '#2c3e50',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '12px',
+    marginBottom: '30px',
+    borderRadius: '6px',
+    border: '1px solid #ccc',
+    fontSize: '16px',
   },
   addButton: {
     display: 'inline-flex',

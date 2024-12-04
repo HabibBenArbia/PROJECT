@@ -5,10 +5,10 @@ import { Modal, Button, Form } from "react-bootstrap"; // Importer les composant
 
 function Documents() {
   const [documents, setDocuments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // Search term state
   const [showModal, setShowModal] = useState(false); // État pour gérer l'affichage du modal
   const [currentDocument, setCurrentDocument] = useState(null); // Document actuel (pour l'édition)
   const [newDocument, setNewDocument] = useState({ title: "", author: "", category: "" }); // Données du formulaire
-
 
   useEffect(() => {
     fetchDocuments();
@@ -26,12 +26,18 @@ function Documents() {
 
   // Supprimer un document
   const deleteDocument = async (id) => {
+
+
+    const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet document ?");
+  if (confirmed) {
     try {
       await axios.delete(`${process.env.REACT_APP_API_URL}/documents/${id}`);
       fetchDocuments(); // Recharger la liste après suppression
     } catch (error) {
       console.error("Erreur lors de la suppression du document :", error);
     }
+   
+  };  
   };
 
   // Gérer l'ajout ou la mise à jour d'un document
@@ -67,17 +73,33 @@ function Documents() {
     setShowModal(true);
   };
 
+  // Filtrer les documents en fonction du terme de recherche
+  const filteredDocuments = documents.filter((document) =>
+    document.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    document.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    document.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div style={styles.container}>
       <h2 style={styles.heading}>Liste des Documents</h2>
+
+      {/* Search Bar */}
+      <input
+        type="text"
+        placeholder="Rechercher un document"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={styles.searchBar}
+      />
 
       <button style={styles.addButton} onClick={() => setShowModal(true)}>
         <FaPlus style={styles.icon} /> Ajouter un document
       </button>
 
-      {documents.length > 0 ? (
+      {filteredDocuments.length > 0 ? (
         <ul style={styles.list}>
-          {documents.map((document, index) => (
+          {filteredDocuments.map((document, index) => (
             <li key={index} style={styles.listItem}>
               <div style={styles.documentInfo}>
                 <strong>Titre :</strong> {document.title} <br />
@@ -139,13 +161,18 @@ function Documents() {
             <Form.Group controlId="category">
               <Form.Label>Catégorie</Form.Label>
               <Form.Control
-                type="text"
-                placeholder="Catégorie"
+                as="select"
                 name="category"
                 value={newDocument.category}
                 onChange={handleChange}
                 required
-              />
+              >
+                <option value="">Sélectionnez une catégorie</option>
+                <option value="Livre">Livre</option>
+                <option value="CD">CD</option>
+                <option value="DVD">DVD</option>
+                <option value="AFFICHE">AFFICHE</option>
+              </Form.Control>
             </Form.Group>
 
             <Button variant="primary" type="submit" style={styles.submitButton}>
@@ -174,6 +201,13 @@ const styles = {
     fontWeight: 'bold',
     marginBottom: '30px',
     color: '#2c3e50',
+  },
+  searchBar: {
+    width: '100%',
+    padding: '10px',
+    marginBottom: '20px',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
   },
   addButton: {
     display: 'inline-flex',

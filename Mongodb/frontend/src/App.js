@@ -4,11 +4,9 @@ import Menu from "./components/Menu";
 import Abonnes from "./components/Abonnes";
 import Documents from "./components/Documents";
 import Emprunts from "./components/Emprunts";
+import Home from "./components/Home";
 
-// Composant pour la page d'accueil
-const Home = () => {
-  return <h1>Bienvenue à la Médiathèque</h1>;
-};
+
 
 const App = () => {
   return (
