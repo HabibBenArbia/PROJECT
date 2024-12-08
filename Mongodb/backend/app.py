@@ -217,7 +217,7 @@ def delete_emprunts_today():
 
         if result.deleted_count > 0:
             return jsonify({
-                "message": f"{result.deleted_count} emprunts supprimés avec succès!",
+                "message": f"{result.deleted_count} Documents retourné avec succès!",
                 "deleted_count": result.deleted_count
             }), 200
         else:
@@ -228,7 +228,7 @@ def delete_emprunts_today():
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return jsonify({
-            "error": "Erreur lors de la suppression des emprunts.",
+            "error": "Erreur lors de la retours des emprunts.",
             "details": str(e)
         }), 500
 
