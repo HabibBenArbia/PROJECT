@@ -143,7 +143,7 @@ function Home() {
   const deleteEmpruntsRetourToday = async () => {
     try {
       await axios.get(`${process.env.REACT_APP_API_URL}/delete_today`);
-      alert("Emprunts retournés aujourd'hui supprimés avec succès !");
+      alert("Emprunts retournés aujourd'hui  avec succès !");
       fetchCounts();  // Refresh counts after the deletion
     } catch (error) {
       console.error("Erreur lors de la suppression des emprunts retournés aujourd'hui :", error);
