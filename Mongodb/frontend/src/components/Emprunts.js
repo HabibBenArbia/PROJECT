@@ -10,7 +10,7 @@ function Emprunts() {
   const [searchTerm, setSearchTerm] = useState(""); // Search term state
   const [showModal, setShowModal] = useState(false); // State for modal visibility
   const [currentEmprunt, setCurrentEmprunt] = useState(null); // Current emprunt (for editing)
-  const [newEmprunt, setNewEmprunt] = useState({ abonnee: "", document: "", date_emprunt: "" }); // Form data
+  const [newEmprunt, setNewEmprunt] = useState({ abonnee: "", document: "", date_emprunt: "" , date_retour: "" }); // Form data
   const [abonnes, setAbonnes] = useState([]); // List of abonnes
   const [documents, setDocuments] = useState([]); // List of documents
 
@@ -55,13 +55,13 @@ function Emprunts() {
   const deleteEmprunt = async (id) => {
    
     
-    const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet emprunts ?");
+    const confirmed = window.confirm("Êtes-vous sûr de vouloir faire retour a ce document ?");
     if (confirmed) {
       try {
         await axios.delete(`${process.env.REACT_APP_API_URL}/emprunts/${id}`);
         fetchEmprunts(); // Recharger la liste après suppression
       } catch (error) {
-        console.error("Erreur lors de la suppression du document :", error);
+        console.error("Erreur lors de la retour du document :", error);
       }
      
     };
@@ -83,7 +83,7 @@ function Emprunts() {
       }
       fetchEmprunts(); // Reload emprunts list
       setShowModal(false); // Close modal
-      setNewEmprunt({ abonnee: "", document: "", date_emprunt: "" }); // Reset form data
+      setNewEmprunt({ abonnee: "", document: "", date_emprunt: "",date_retour: "" }); // Reset form data
       setCurrentEmprunt(null); // Reset current emprunt
     } catch (error) {
       console.error("Erreur lors de l'ajout ou modification de l'emprunt :", error);
@@ -154,9 +154,7 @@ function Emprunts() {
         style={styles.searchBar}
       />
 
-      <button style={styles.addButton} onClick={() => setShowModal(true)}>
-        <FaPlus style={styles.icon} /> {currentEmprunt ? "Modifier l'Emprunt" : "Ajouter un emprunt"}
-      </button>
+
 
       {filteredEmprunts.length > 0 ? (
         <ul style={styles.list}>
@@ -167,15 +165,14 @@ function Emprunts() {
               <li key={emprunt._id} style={styles.listItem}>
                 <div style={styles.empruntInfo}>
                   <strong>Abonné :</strong> {abonnee ? `${abonnee.nom} ${abonnee.prenom}` : "Nom de l'abonné indisponible"} <br />
-                  <strong>Document :</strong> {document ? document.title : "Document non disponible"} <br />
+                  <strong>Document :</strong> {emprunt.document ? emprunt.document : "Document non disponible"} <br /> {/* Display document name */}
                   <strong>Date d'Emprunt :</strong> {new Date(emprunt.date_emprunt).toLocaleDateString()} <br />
+                  <strong>Date de Retour :</strong> {new Date(emprunt.date_retour).toLocaleDateString()} <br />
                 </div>
                 <div style={styles.actions}>
-                  <button style={styles.editButton} onClick={() => handleEdit(emprunt)}>
-                    <FaEdit style={styles.actionIcon} /> Modifier
-                  </button>
+              
                   <button style={styles.deleteButton} onClick={() => deleteEmprunt(emprunt._id)}>
-                    <FaTrash style={styles.actionIcon} /> Supprimer
+                    <FaTrash style={styles.actionIcon} /> Retour
                   </button>
                 </div>
               </li>
@@ -220,6 +217,16 @@ function Emprunts() {
                 type="date"
                 name="date_emprunt"
                 value={newEmprunt.date_emprunt}
+                onChange={handleChange}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="date_retour">
+              <Form.Label>Date de retour</Form.Label>
+              <Form.Control
+                type="date"
+                name="date_retour"
+                value={newEmprunt.date_retour}
                 onChange={handleChange}
                 required
               />

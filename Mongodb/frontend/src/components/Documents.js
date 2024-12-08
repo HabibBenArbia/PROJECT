@@ -2,19 +2,31 @@ import React, { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa"; // Icons for actions
 import axios from "axios";
 import { Modal, Button, Form } from "react-bootstrap"; // Importer les composants de Bootstrap
+import Select from "react-select";
 
 function Documents() {
   const [documents, setDocuments] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(""); // Search term state
-  const [showModal, setShowModal] = useState(false); // État pour gérer l'affichage du modal
-  const [currentDocument, setCurrentDocument] = useState(null); // Document actuel (pour l'édition)
-  const [newDocument, setNewDocument] = useState({ title: "", author: "", category: "" }); // Données du formulaire
+  const [emprunts, setEmprunts] = useState([]); // Liste des emprunts
+  const [abonnes, setAbonnes] = useState([]); // Liste des abonnés
+  const [searchTerm, setSearchTerm] = useState(""); // Term de recherche
+  const [showModal, setShowModal] = useState(false); // Modal state
+  const [currentDocument, setCurrentDocument] = useState(null); // Document en édition
+  const [newDocument, setNewDocument] = useState({ title: "", author: "", category: "", annee: "" }); // Formulaire document
+  const [empruntData, setEmpruntData] = useState({
+    abonnee: "",
+    document: "",
+    date_emprunt: "",
+    date_retour: "",
+  }); // Données d'emprunt
+  const [showEmpruntModal, setShowEmpruntModal] = useState(false); // Modal de l'emprunt
 
   useEffect(() => {
     fetchDocuments();
+    fetchEmprunts();
+    fetchAbonnes();
   }, []);
 
-  // Récupérer la liste des documents
+  // Récupérer les documents
   const fetchDocuments = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/documents`);
@@ -24,61 +36,110 @@ function Documents() {
     }
   };
 
-  // Supprimer un document
-  const deleteDocument = async (id) => {
-
-
-    const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet document ?");
-  if (confirmed) {
+  // Récupérer les emprunts
+  const fetchEmprunts = async () => {
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/documents/${id}`);
-      fetchDocuments(); // Recharger la liste après suppression
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/emprunts`);
+      setEmprunts(response.data);
     } catch (error) {
-      console.error("Erreur lors de la suppression du document :", error);
+      console.error("Erreur lors de la récupération des emprunts :", error);
     }
-   
-  };  
   };
 
-  // Gérer l'ajout ou la mise à jour d'un document
-  const handleSaveDocument = async (event) => {
+  // Récupérer les abonnés
+  const fetchAbonnes = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/abonnés`);
+      setAbonnes(response.data);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des abonnés :", error);
+    }
+  };
+
+  // Gérer l'ajout d'un emprunt
+  const handleEmprunt = async (event) => {
     event.preventDefault();
     try {
-      if (currentDocument) {
-        // Si nous avons un document à modifier
-        await axios.put(`${process.env.REACT_APP_API_URL}/documents/${currentDocument._id}`, newDocument);
-        setCurrentDocument(null);
-      } else {
-        // Sinon, nous ajoutons un nouveau document
-        await axios.post(`${process.env.REACT_APP_API_URL}/documents`, newDocument);
-      }
-      fetchDocuments(); // Recharger la liste des documents
-      setShowModal(false); // Fermer le modal
-      setNewDocument({ title: "", author: "", category: "" }); // Réinitialiser le formulaire
+      await axios.post(`${process.env.REACT_APP_API_URL}/emprunts`, empruntData);
+      fetchEmprunts(); // Recharger les emprunts
+      setShowEmpruntModal(false); // Fermer le modal après emprunt
     } catch (error) {
-      console.error("Erreur lors de l'enregistrement du document :", error);
+      console.error("Erreur lors de l'enregistrement de l'emprunt :", error);
     }
   };
 
-  // Gérer les changements dans les champs du formulaire
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setNewDocument({ ...newDocument, [name]: value });
+  // Supprimer un document
+  const deleteDocument = async (id) => {
+    const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer ce document ?");
+    if (confirmed) {
+      try {
+        await axios.delete(`${process.env.REACT_APP_API_URL}/documents/${id}`);
+        fetchDocuments(); // Recharger la liste après suppression
+      } catch (error) {
+        console.error("Erreur lors de la suppression du document :", error);
+      }
+    }
   };
 
-  // Ouvrir le modal pour l'édition d'un document
+  // Ouvrir le modal pour l'ajout ou la modification d'un document
   const handleEdit = (document) => {
     setCurrentDocument(document);
-    setNewDocument({ title: document.title, author: document.author, category: document.category });
+    setNewDocument({ title: document.title, author: document.author, category: document.category, annee: document.annee });
     setShowModal(true);
   };
+
+  // Gérer le changement de champs du formulaire (ajout/modification)
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setNewDocument((prevDocument) => ({
+      ...prevDocument,
+      [name]: value,
+    }));
+  };
+
+  // Sauvegarder un document (ajouter ou modifier)
+  const handleSaveDocument = async (event) => {
+    event.preventDefault();
+    if (currentDocument) {
+      try {
+        await axios.put(`${process.env.REACT_APP_API_URL}/documents/${currentDocument._id}`, newDocument);
+        fetchDocuments(); // Recharger les documents après modification
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du document :", error);
+      }
+    } else {
+      try {
+        await axios.post(`${process.env.REACT_APP_API_URL}/documents`, newDocument);
+        fetchDocuments(); // Recharger les documents après ajout
+      } catch (error) {
+        console.error("Erreur lors de l'ajout du document :", error);
+      }
+    }
+    setShowModal(false);
+  };
+
+  const abonneeOptions = abonnes.map((abonne) => ({
+    value: abonne._id,
+    label: `${abonne.nom} ${abonne.prenom}`,
+  }));
 
   // Filtrer les documents en fonction du terme de recherche
   const filteredDocuments = documents.filter((document) =>
     document.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     document.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    document.category.toLowerCase().includes(searchTerm.toLowerCase())
+    document.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    document.annee.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Vérifier si un document est emprunté
+  const isDocumentEmprunte = (titre) => {
+    return emprunts.some((emprunt) => emprunt.document === titre);
+  };
+
+  const abonnesOptions = abonnes.map((abonne) => ({
+    value: abonne._id,
+    label: `${abonne.nom} ${abonne.prenom}`,
+  }));
 
   return (
     <div style={styles.container}>
@@ -104,9 +165,25 @@ function Documents() {
               <div style={styles.documentInfo}>
                 <strong>Titre :</strong> {document.title} <br />
                 <strong>Auteur :</strong> {document.author} <br />
-                <strong>Catégorie :</strong> {document.category}
+                <strong>Catégorie :</strong> {document.category}<br />
+                <strong>Annee :</strong> {document.annee}
               </div>
+
+              {/* Afficher ou non le bouton Emprunter */}
               <div style={styles.actions}>
+                {isDocumentEmprunte(document.title) ? (
+                  <button style={styles.indisponibleButton}>Indisponible</button>
+                ) : (
+                  <button
+                    style={styles.empruntButton}
+                    onClick={() => {
+                      setEmpruntData({ ...empruntData, document: document.title });
+                      setShowEmpruntModal(true); // Ouvrir le modal d'emprunt
+                    }}
+                  >
+                    Emprunter
+                  </button>
+                )}
                 <button
                   style={styles.editButton}
                   onClick={() => handleEdit(document)}
@@ -126,6 +203,56 @@ function Documents() {
       ) : (
         <p style={styles.noDocuments}>Aucun document trouvé.</p>
       )}
+
+      {/* Modal pour emprunter un document */}
+      <Modal show={showEmpruntModal} onHide={() => setShowEmpruntModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Emprunter un Document</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleEmprunt}>
+          <Form.Group controlId="abonne">
+       
+      <Form.Label>Abonné</Form.Label>
+      <Select
+        value={
+          abonnesOptions.find((option) => option.value === empruntData.abonnee) || null
+        }
+        onChange={(selectedOption) =>
+          setEmpruntData({ ...empruntData, abonnee: selectedOption.value })
+        }
+        options={abonnesOptions}
+        placeholder="Sélectionnez un abonné"
+        required
+      />
+    </Form.Group>
+
+            <Form.Group controlId="dateEmprunt">
+              <Form.Label>Date d'Emprunt</Form.Label>
+              <Form.Control
+                type="date"
+                value={empruntData.date_emprunt}
+                onChange={(e) => setEmpruntData({ ...empruntData, date_emprunt: e.target.value })}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group controlId="dateRetour">
+              <Form.Label>Date de Retour</Form.Label>
+              <Form.Control
+                type="date"
+                value={empruntData.date_retour}
+                onChange={(e) => setEmpruntData({ ...empruntData, date_retour: e.target.value })}
+                required
+              />
+            </Form.Group>
+
+            <Button type="submit" variant="primary">
+              Emprunter
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
 
       {/* Modal pour ajouter/modifier un document */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
@@ -169,14 +296,24 @@ function Documents() {
               >
                 <option value="">Sélectionnez une catégorie</option>
                 <option value="Livre">Livre</option>
-                <option value="CD">CD</option>
-                <option value="DVD">DVD</option>
-                <option value="AFFICHE">AFFICHE</option>
+                <option value="Magazine">Magazine</option>
+                <option value="Article">Article</option>
               </Form.Control>
             </Form.Group>
+            <Form.Group controlId="annee">
+              <Form.Label>Annee</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="Annee"
+                name="annee"
+                value={newDocument.annee}
+                onChange={handleChange}
+                required
+              />
+            </Form.Group>
 
-            <Button variant="primary" type="submit" style={styles.submitButton}>
-              {currentDocument ? "Mettre à jour" : "Ajouter"}
+            <Button type="submit" variant="primary" style={styles.submitButton}>
+              {currentDocument ? "Mettre à jour le Document" : "Ajouter le Document"}
             </Button>
           </Form>
         </Modal.Body>
@@ -184,6 +321,13 @@ function Documents() {
     </div>
   );
 }
+
+
+
+
+
+
+
 
 const styles = {
   container: {
@@ -287,6 +431,26 @@ const styles = {
   },
   submitButton: {
     marginTop: '20px',
+  },
+  unavailable: {
+    color: "red",
+    fontWeight: "bold",
+  },
+  empruntButton: {
+    backgroundColor: "#3498db",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "6px 12px",
+    cursor: "pointer",
+  },
+  indisponibleButton: {
+    backgroundColor: "#e74c3c",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "6px 12px",
+    cursor: "not-allowed",
   },
 };
 

@@ -27,7 +27,6 @@ function Abonnes() {
 
   // Delete a subscriber
   const deleteAbonne = async (id) => {
-
     const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet document ?");
     if (confirmed) {
       try {
@@ -36,8 +35,7 @@ function Abonnes() {
       } catch (error) {
         console.error("Erreur lors de la suppression du document :", error);
       }
-     
-    };
+    }
   };
 
   // Handle editing a subscriber
@@ -49,27 +47,27 @@ function Abonnes() {
 
   // Add or update a subscriber
   const handleAddAbonne = async (event) => {
-    event.preventDefault();
-
+    event.preventDefault(); // Empêcher le rechargement de la page
+  
     const apiUrl = currentAbonne
-      ? `${process.env.REACT_APP_API_URL}/abonnés/${currentAbonne._id}` // Update if subscriber exists
-      : `${process.env.REACT_APP_API_URL}/abonnés`; // Add new if no subscriber is selected
-
+      ? `${process.env.REACT_APP_API_URL}/abonnés/${currentAbonne._id}` // Mise à jour si l'abonné existe
+      : `${process.env.REACT_APP_API_URL}/abonnés`; // Ajouter si aucun abonné n'est sélectionné
+  
     try {
       if (currentAbonne) {
-        // Update existing subscriber
+        // Mettre à jour l'abonné existant
         await axios.put(apiUrl, newAbonne);
       } else {
-        // Add new subscriber
+        // Ajouter un nouvel abonné
         await axios.post(apiUrl, newAbonne);
       }
-
-      fetchAbonnes(); // Reload the list of subscribers
-      setShowModal(false); // Close the modal
-      setNewAbonne({ nom: "", prenom: "", adresse: "" }); // Reset the form
-      setCurrentAbonne(null); // Reset current subscriber
+  
+      fetchAbonnes(); // Recharger la liste des abonnés
+      setShowModal(false); // Fermer le modal
+      setNewAbonne({ nom: "", prenom: "", adresse: "" }); // Réinitialiser le formulaire
+      setCurrentAbonne(null); // Réinitialiser l'abonné actuel
     } catch (error) {
-      console.error("Error adding or updating subscriber:", error);
+      console.error("Erreur lors de l'ajout ou de la mise à jour de l'abonné :", error);
     }
   };
 
@@ -116,6 +114,8 @@ function Abonnes() {
                 <strong>Nom :</strong> {abonne.nom} <br />
                 <strong>Prénom :</strong> {abonne.prenom} <br />
                 <strong>Adresse :</strong> {abonne.adresse} <br />
+                <strong>Date d'inscription :</strong> 
+                {new Date(abonne.date_inscription).toLocaleDateString("fr-FR")} <br /> {/* Format the date */}
               </div>
               <div style={styles.actions}>
                 <button

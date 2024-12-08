@@ -1,7 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
+from datetime import datetime
+
 
 # Initialisation de l'application Flask
 app = Flask(__name__)
@@ -34,11 +36,10 @@ def index():
 
 # ============================
 # Routes CRUD pour Abonnés
-# ============================
 @app.route('/abonnés', methods=['GET', 'POST'])
 def abonnés():
     if request.method == 'GET':
-        abonnés = list(abonnés_collection.find({}, {"nom": 1, "prenom": 1, "adresse": 1}))  # Limiter les champs renvoyés
+        abonnés = list(abonnés_collection.find({}, {"nom": 1, "prenom": 1, "adresse": 1, "date_inscription": 1}))  # Limiter les champs renvoyés
         abonnés = [serialize_id(abonné) for abonné in abonnés]
         return jsonify(abonnés), 200
 
@@ -48,8 +49,20 @@ def abonnés():
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
-        abonnés_collection.insert_one(data)
-        return jsonify({"message": "Abonné ajouté avec succès!"}), 201
+
+        # Ajouter le champ date_inscription avec la date et l'heure actuelles
+        data['date_inscription'] = datetime.now().strftime('%d/%m/%Y')
+
+        # Insérer l'abonné dans la base de données
+        result = abonnés_collection.insert_one(data)
+
+        # Récupérer l'ID de l'abonné inséré et le sérialiser
+        new_abonné = abonnés_collection.find_one({"_id": result.inserted_id})
+        new_abonné = serialize_id(new_abonné)
+
+        # Retourner une réponse valide après l'insertion
+        return jsonify({"message": "Abonné ajouté avec succès", "data": new_abonné}), 201
+
 
 @app.route('/abonnés/<id>', methods=['GET', 'PUT', 'DELETE'])
 def abonné_operations(id):
@@ -83,13 +96,13 @@ def abonné_operations(id):
 @app.route('/documents', methods=['GET', 'POST'])
 def documents():
     if request.method == 'GET':
-        documents = list(documents_collection.find({}, {"title": 1, "author": 1, "category": 1}))
+        documents = list(documents_collection.find({}, {"title": 1, "author": 1, "category": 1, "annee": 1}))
         documents = [serialize_id(document) for document in documents]
         return jsonify(documents), 200
 
     elif request.method == 'POST':
         data = request.json
-        required_fields = ["title", "author", "category"]
+        required_fields = ["title", "author", "category" , "annee"]
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
@@ -129,13 +142,13 @@ def document_operations(id):
 def emprunts():
     if request.method == 'GET':
         # Modifié pour récupérer les nouveaux champs
-        emprunts = list(emprunts_collection.find({}, {"abonnee": 1, "document": 1, "date_emprunt": 1}))
+        emprunts = list(emprunts_collection.find({}, {"abonnee": 1, "document": 1, "date_emprunt": 1, "date_retour": 1}))
         emprunts = [serialize_id(emprunt) for emprunt in emprunts]
         return jsonify(emprunts), 200
 
     elif request.method == 'POST':
         data = request.json
-        required_fields = ["abonnee", "document", "date_emprunt"]  # Champs renommés
+        required_fields = ["abonnee", "document", "date_emprunt", "date_retour"]  # Champs renommés
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
@@ -187,6 +200,39 @@ def emprunt_operations(id):
         if result.deleted_count == 0:
             return jsonify({"error": "Emprunt introuvable"}), 404
         return jsonify({"message": "Emprunt supprimé avec succès!"}), 200
+    
+# ============================
+
+@app.route('/delete_today', methods=['GET', 'DELETE'])
+def delete_emprunts_today():
+    try:
+        # Obtenir la date d'aujourd'hui au format YYYY-MM-DD
+        today = datetime.today().strftime('%Y-%m-%d')  # Format 'YYYY-MM-DD'
+
+        # Journaliser la date pour déboguer
+        print(f"Today's date for matching: {today}")
+
+        # Trouver et supprimer tous les emprunts avec `date_retour` égal à la date d'aujourd'hui
+        result = emprunts_collection.delete_many({"date_retour": today})
+
+        if result.deleted_count > 0:
+            return jsonify({
+                "message": f"{result.deleted_count} emprunts supprimés avec succès!",
+                "deleted_count": result.deleted_count
+            }), 200
+        else:
+            return jsonify({
+                "message": "Aucun emprunt trouvé avec la date de retour d'aujourd'hui.",
+                "deleted_count": 0
+            }), 404
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return jsonify({
+            "error": "Erreur lors de la suppression des emprunts.",
+            "details": str(e)
+        }), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
