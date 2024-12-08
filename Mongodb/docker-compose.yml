@@ -4,6 +4,7 @@ services:
   backend:
     build:
       context: ./backend  # Le chemin vers le répertoire backend contenant le Dockerfile
+    image: haboub4427/backend:latest  # Nom de l'image après la construction
     container_name: backend
     ports:
       - "5000:5000"  # Le port 5000 du conteneur est mappé au port 5000 sur votre machine locale
@@ -17,6 +18,7 @@ services:
   frontend:
     build:
       context: ./frontend  # Le chemin vers le répertoire frontend contenant le Dockerfile
+    image: haboub4427/frontend:latest  # Nom de l'image après la construction
     container_name: frontend
     ports:
       - "3000:3000"  # Le port 3000 du conteneur est mappé au port 3000 sur votre machine locale
